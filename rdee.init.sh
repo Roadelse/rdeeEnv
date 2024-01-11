@@ -5,6 +5,9 @@
 # on a Linux system, including WSL.                       #
 ###########################################################
 
+# 2024-01-11    init
+
+
 
 myDir=$(cd $(dirname "${BASH_SOURCE[0]}") && readlink -f .)
 cd $myDir
@@ -94,8 +97,11 @@ for p in "${projs[@]}"; do
 done
 
 
-# <L0> union all init-scripts and modulefiles
 cd $installDir
+
+# <L0> basic settings
+[[ -n $WSL_DISTRO_NAME ]] && isWSL=1 || isWSL=0
+
 
 cat << EOF > setenvfiles/.components/load.rdeeself.sh
 #!/bin/bash
@@ -133,8 +139,41 @@ set-alias cdG {cd $reRec/GitRepos}
 
 EOF
 
+# <L1> WSL-only settings
+if [[ $isWSL == 1 ]]; then  #>- added @2024-01-11
+    winuser=$(cmd.exe /C "echo %USERNAME%" 2>/dev/null | tr -d '\r')  #>- "| tr -d '\r'" is necessary or the username is followed by a ^M
+    cat << EOF >> setenvfiles/.components/load.rdeeself.sh
+# >>>>>>>>>>>>>> WSL settings
+export winuser=$winuser
+export Onedrive=/mnt/c/Users/${winuser}/OneDrive
+alias cdO='cd \$OneDrive'
+export Baidusync=/mnd/d/BaiduSyncdisk
+alias cdB='cd \$Baidusync'
+export winHome=/mnt/c/Users/${winuser}
+export Desktop=\$winHome/Desktop
+alias cdU='cd \$winHome'
+alias cdD='cd \$Desktop'
+EOF
+
+    cat << EOF >> modulefiles/.components/rdeeself
+setenv winuser $winuser
+setenv Onedrive /mnt/c/Users/${winuser}/OneDrive
+setenv Baidusync /mnd/d/BaiduSyncdisk
+setenv winHome /mnt/c/Users/${winuser}
+setenv Desktop \$env(winHome)/Desktop
+
+set-alias cdO "cd \$env(Onedrive)"
+set-alias cdB "cd \$env(Baidusync)"
+set-alias cdU "cd \$env(winHome)"
+set-alias cdD "cd \$env(Desktop)"
+
+EOF
+fi
+	
 
 
+
+# <L0> union all init-scripts and modulefiles
 echo "Union all load-script components into one"
 cd setenvfiles
 if [[ $echo_only == 0 ]]; then
