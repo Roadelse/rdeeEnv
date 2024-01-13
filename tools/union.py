@@ -7,27 +7,38 @@
 # from multiple projects into one 						  #
 ###########################################################
 
+
+# 2024-01-11 	init
+# 2024-01-13 	Bug fix for sort-function sf(x) (not strictly correct, just a workaround)
+
+
+
 import sys, os, os.path
 
 
 def main(files):
 	# print(files)
+	def sf(x):
+			if x.startswith('prepend-path'):
+				rst = 2
+			elif x.startswith('setenv') or x.startswith('export'):
+				rst = 1
+			elif x.startswith('set-alias') or x.startswith('alias'):
+				rst = 3
+			else:
+				rst = 10
+			
+			if '$' in x:
+				rst += 0.5
+			return rst
+	
 	if files[0].endswith('.sh'):
 		lang = "bash"
 		outfile = 'load.rdee.sh'
-		sf = lambda x : 1 if x.startswith('export') else (2 if x.startswith('alias') else 3) #>- 1st : set env, 2nd: set alias, 3rd: others
 	else:
 		lang = "module"
 		outfile = "rdee"
-		def sf(x):
-			if x.startswith('prepend-path'):
-				return 1
-			elif x.startswith('setenv'):
-				return 2
-			elif x.startswith('set-alias'):
-				return 3
-			else:
-				return 10
+		
 
 	lines = []
 	for f in files:
