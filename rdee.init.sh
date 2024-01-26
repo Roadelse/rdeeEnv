@@ -153,6 +153,8 @@ export winHome=/mnt/c/Users/${winuser}
 export Desktop=\$winHome/Desktop
 alias cdU='cd \$winHome'
 alias cdD='cd \$Desktop'
+
+alias ii='explorer.exe'
 EOF
 
     cat << EOF >> modulefiles/.components/rdeeself
@@ -167,7 +169,14 @@ set-alias cdB "cd \$env(Baidusync)"
 set-alias cdU "cd \$env(winHome)"
 set-alias cdD "cd \$env(Desktop)"
 
+set-alias ii {explorer.exe}
 EOF
+
+    if [[ `ls /mnt/d/XAPP/SumatraPDF/SumatraPDF-*exe` != "" ]]; then
+        echo 'alias pdf=/mnt/d/XAPP/SumatraPDF/SumatraPDF-*exe' >> setenvfiles/.components/load.rdeeself.sh
+	echo 'set-alias pdf {/mnt/d/XAPP/SumatraPDF/SumatraPDF-*exe}' >> modulefiles/.components/rdeeself
+    fi
+
 fi
 	
 
