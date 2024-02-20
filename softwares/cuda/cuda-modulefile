@@ -1,0 +1,13 @@
+#%Module1.0
+# cuda modulefile
+#
+module-whatis "Sets up the environment for CUDA Toolkit"
+
+# CUDA Toolkit directory
+set cuda_root /usr/local/cuda
+
+prepend-path PATH $cuda_root/bin
+prepend-path LD_LIBRARY_PATH $cuda_root/lib64
+prepend-path LIBRARY_PATH $cuda_root/lib64
+prepend-path INCLUDE $cuda_root/include
+setenv CUDA_HOME $cuda_root
