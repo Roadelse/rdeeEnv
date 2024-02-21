@@ -15,6 +15,11 @@ set -e
 myDir=$(cd $(dirname "${BASH_SOURCE[0]}") && readlink -f .)
 [[ -n $WSL_DISTRO_NAME ]] && isWSL=1 || isWSL=0
 
+ANSI_RED='\033[31m'
+ANSI_GREEN='\033[32m'
+ANSI_YELLOW='\033[33m'
+ANSI_NC='\033[0m'
+
 #@ <.pre-check/>
 set +e  #@ exp allow non-zero status during check process
 #@ <..git/>
@@ -85,6 +90,7 @@ elif [[ -z ${reHome} ]]; then #@ branch set default reHome
 fi #@ branch omit branch which set reHome in environment variables
 
 
+echo reHome=$reHome
 
 #@ <.dependent>
 reRec=$reHome/recRoot
@@ -122,6 +128,12 @@ export reTest=${reTest}
 
 alias cdR='cd $reRec'
 alias cdG='cd $reGit'
+
+
+export ANSI_RED='\033[31m'
+export ANSI_GREEN='\033[32m'
+export ANSI_YELLOW='\033[33m'
+export ANSI_NC='\033[0m'
 
 alias ..='cd ..'
 alias ...='cd ../..'
@@ -161,6 +173,12 @@ setenv reTest ${reTest}
 
 set-alias cdR {cd $reRec}
 set-alias cdG {cd $reGit}
+
+
+setenv ANSI_RED {\033[31m}
+setenv ANSI_GREEN {\033[32m}
+setenv ANSI_YELLOW {\033[33m}
+setenv ANSI_NC {\033[0m}
 
 set-alias .. {cd ..}
 set-alias ... {cd ../..}
@@ -234,9 +252,9 @@ projs=(rdeeToolkit reSync)
 
 #@ <..loop-projs>
 for p in "${projs[@]}"; do
-	if [[ ! -e $GitReposDir/$p ]]; then
-		echo "No $p, clone it to $GitReposDir/$p"
-		cd $GitReposDir
+	if [[ ! -e $reGit/$p ]]; then
+		echo "No $p in $reGit, clone it"
+		cd $reGit
 		if [[ $echo_only == 0 ]]; then
 			if [[ $git_clone_protocol == ssh ]]; then
 				git clone git@github.com:Roadelse/$p.git  #>- ignore fingerprint check since it should have been confirmed in cloning rdeeEnv itself
@@ -245,87 +263,73 @@ for p in "${projs[@]}"; do
 			fi
 		fi
 	else
-		echo "$p detected in $GitReposDir, use the existed one"
+		echo "$p detected in $reGit, use the existed one"
 	fi
 
 	# <...call-init> call init in this repo
-	if [[ ! -e $GitReposDir/$p/init/init.Linux.sh ]]; then
+	if [[ ! -e $reGit/$p/init/init.Linux.sh ]]; then
 		echo '\033[31m'"Error! Unsupported project without init script"'\033[0m'
 		exit 200
 	fi
 
-	cd $GitReposDir/$p/init
+	cd $reGit/$p/init
 	if [[ $echo_only == 0 ]]; then
 		$reGit/$p/init/init.Linux.sh -b $installDir/bin -s $installDir/setenvfiles/.components/load.${p}.sh -m $installDir/modulefiles/.components/${p}
 	fi
 done
 
 
-# <.nion> union all init-scripts and modulefiles
+# <.union> union all init-scripts and modulefiles
 echo "Union all load-script components into one"
-cd setenvfiles
+cd $installDir
 if [[ $echo_only == 0 ]]; then
-	$myDir/tools/union.py .components/*
+	$reGit/rdeeToolkit/bin/io/txtop.union-setenv-modulefiles.py setenvfiles/load.rdee.sh setenvfiles/.components/*
 fi
-chmod +x load.rdee.sh  #>- <imporve> force filename synchronization
+chmod +x setenvfiles/load.rdee.sh  #>- <imporve> force filename synchronization
 
 echo "Union all modulefile components into one"
-cd ../modulefiles
 if [[ $echo_only == 0 ]]; then
-	$myDir/tools/union.py .components/*
+	$reGit/rdeeToolkit/bin/io/txtop.union-setenv-modulefiles.py modulefiles/rdee modulefiles/.components/*
 fi
 
-# <L0> add in system
-# to be deved
+
+#@ <post> 
+#@ <.link-modulefiles> link generated modulefiles to $reSoft/modulefiles
+mkdir -p $reSoft/modulefiles/rdee
+ln -sf $installDir/modulefiles/rdee $reSoft/modulefiles/rdee
+
+#@ <.modify-profile> init control & PS1 setting
 if [[ -n $profile ]]; then
-    read -p "profile detected, which way to init rdee? [setenv|module] default: module" $sm
+    echo -e "profile detected, which way to init rdee? [${ANSI_YELLOW}setenv${ANSI_NC}|${ANSI_GREEN}module${ANSI_NC}] default:${ANSI_GREEN}module${ANSI_NC} "
+    read $sm
     if [[ -z $sm ]]; then
         sm=module
     fi
-    if [[ $sm == "module" ]]; then
-        if [[ -n `grep -P '# >>* \[rdee\] init' $profile 2>/dev/null` ]]; then
-            sed -i '/^# >* \[rdee\] init/,/^$/c\
-# >>>>>>>>>>>>>>>>>>>>>>>>>>> [rdee] init\
-export PS1='\''\\033[01;32m\\u@\\h\\033[0m:\\033[01;34m\\W\\033[0m$ '\'"\
-module use $installDir/modulefiles\
-module load rdee\
-" $profile
-        else
-            if [[ ! -e $profile ]]; then   #>- added @2024-01-05 22:44:58
-                echo -e "#!/bin/bash\n\n" > $profile
-            fi
-                
-            cat << EOF >> $profile
 
+    if [[ $sm == "module" ]]; then  #@ branch use module to init rdee
+        cat << EOF > .temp
 # >>>>>>>>>>>>>>>>>>>>>>>>>>> [rdee] init
 export PS1='\033[01;32m\\u@\\h\033[0m:\033[01;34m\\W\033[0m$ '
-module use $installDir/modulefiles
+module use $reSoft/modulefiles
 module load rdee
 
 EOF
-        fi
-    elif [[ $sm == "setenv" ]]; then
-        if [[ -n `grep -P '# >>* \[rdee\] init' $profile 2>/dev/null` ]]; then
-            sed -i '/^# >* \[rdee\] init/,/^$/c\
-# >>>>>>>>>>>>>>>>>>>>>>>>>>> [rdee] init\
-export PS1='\''\\033[01;32m\\u@\\h\\033[0m:\\033[01;34m\\W\\033[0m$ '\'"\
-source $installDir/setenvfiles/load.rdee.sh\
-" $profile
-        else
-            if [[ ! -e $profile ]]; then   #>- added @2024-01-05 22:44:58
-                echo -e "#!/bin/bash\n\n" > $profile
-            fi
-                
-            cat << EOF >> $profile
-
+        python3 $reGit/rdeeToolkit/bin/io/txtop.ra-nlines.py $profile .temp
+        rm -f .temp
+    elif [[ $sm == "setenv" ]]; then  #@ branch use shell script to init rdee
+        cat << EOF > .temp
 # >>>>>>>>>>>>>>>>>>>>>>>>>>> [rdee] init
 export PS1='\033[01;32m\\u@\\h\033[0m:\033[01;34m\\W\033[0m$ '
 source $installDir/setenvfiles/load.rdee.sh
 
 EOF
-        fi
+        python3 $reGit/rdeeToolkit/bin/io/txtop.ra-nlines.py $profile .temp
+        rm -f .temp
     else
         echo "Unknown input: $sm"
         exit 200
     fi
+else
+    echo -e "${ANSI_YELLOW}no profile detected${ANSI_NC}, use '-p ...' to add init statements"
+    exit 0
 fi
