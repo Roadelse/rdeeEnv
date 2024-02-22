@@ -15,6 +15,10 @@ set -e
 myDir=$(cd $(dirname "${BASH_SOURCE[0]}") && readlink -f .)
 [[ -n $WSL_DISTRO_NAME ]] && isWSL=1 || isWSL=0
 
+if [[ $isWSL == 1 ]]; then
+    winuser=$(cmd.exe /C "echo %USERNAME%" 2>/dev/null | tr -d '\r')  #>- "| tr -d '\r'" is necessary or the username is followed by a ^M
+fi
+
 ANSI_RED='\033[31m'
 ANSI_GREEN='\033[32m'
 ANSI_YELLOW='\033[33m'
@@ -54,8 +58,9 @@ set -e  #@ exp Forbid non-zero status after
 #@ <..defaultArg>
 profile=
 echo_only=0
+shop_help=0
 #@ <..resolve>
-ARGS=`getopt -o r:p:e --long reHome:,echo_only,profile: -n "$0" -- "$@"`
+ARGS=`getopt -o r:p:eh --long reHome:,echo_only,profile:,help -n "$0" -- "$@"`
 eval set -- "$ARGS"
 while true; do
     case "$1" in
@@ -71,6 +76,10 @@ while true; do
             profile=$2
             shift 2
             ;;
+        -h|--help)
+            show_help=1
+            shift 1
+            ;;
         --)
             shift
             break
@@ -81,6 +90,24 @@ while true; do
             ;;
     esac
 done
+
+#@ <..help>
+if [[ $show_help == 1 ]]; then
+    echo -e "
+usage: ./rdee.init.sh [options]
+
+options:
+    ● \033[32m-h\033[0m
+        show help information
+    ● \033[32m-e\033[0m
+        Do not do any operation rather than echo
+    ● \033[32m-r\033[0m, default:\$HOME
+        set reHome path
+    ● \033[32m-p\033[0m, [optional]
+        set target profile to be updated.
+"
+    exit 0
+fi
 
 #@ <..reHome>
 if [[ -n ${reHome_fromArg+x} ]]; then  #@ branch set reHome in arguments manually
@@ -102,9 +129,28 @@ reTool=$reHome/Tool
 reTemp=$reHome/temp
 reTest=$reHome/test
 
+
 installDir=$reSoft/rdee
 
 #@ <core>
+#@ <.org-file-dir>
+#@ <.WSL-basics>
+if [[ $isWSL ]]; then
+
+    reDesktop=$reHome/Desktop
+    reOnedrive=$reHome/Onedrive
+    reBaidusync=$reHome/Baidusync
+    reDownloads=$reHome/Downloads
+
+    ln -sf /mnt/d/recRoot $reRec
+
+    ln -sf /mnt/d/Baidusyncdisk $reBaidusync
+    ln -sf /mnt/c/Users/${winuser}/OneDrive $reOnedrive
+    ln -sf /mnt/c/Users/${winuser}/Desktop $reDesktop
+    ln -sf /mnt/c/Users/${winuser}/Downloads $reDownloads
+fi
+
+#@ <.rdee-installation>
 mkdir -p $installDir && cd $_
 mkdir -p bin
 mkdir -p setenvfiles/.components
@@ -208,16 +254,15 @@ set-alias unweb {unset https_proxy; unset http_proxy}
 EOF
 #@ <..WSL-only-settings>
 if [[ $isWSL == 1 ]]; then
-    winuser=$(cmd.exe /C "echo %USERNAME%" 2>/dev/null | tr -d '\r')  #>- "| tr -d '\r'" is necessary or the username is followed by a ^M
     cat << EOF >> setenvfiles/.components/load.rdeeself.sh
 # >>>>>>>>>>>>>> WSL settings
 export winuser=$winuser
-export Onedrive=/mnt/c/Users/${winuser}/OneDrive
+export Onedrive=$reOnedrive
 alias cdO='cd \$OneDrive'
-export Baidusync=/mnd/d/BaiduSyncdisk
+export Baidusync=$reBaidusync
 alias cdB='cd \$Baidusync'
 export winHome=/mnt/c/Users/${winuser}
-export Desktop=\$winHome/Desktop
+export Desktop=$reDesktop
 alias cdU='cd \$winHome'
 alias cdD='cd \$Desktop'
 
@@ -226,10 +271,10 @@ EOF
 
     cat << EOF >> modulefiles/.components/rdeeself
 setenv winuser $winuser
-setenv Onedrive /mnt/c/Users/${winuser}/OneDrive
-setenv Baidusync /mnd/d/BaiduSyncdisk
+setenv Onedrive $reOnedrive
+setenv Baidusync $reBaidusync
 setenv winHome /mnt/c/Users/${winuser}
-setenv Desktop \$env(winHome)/Desktop
+setenv Desktop $reDesktop
 
 set-alias cdO "cd \$env(Onedrive)"
 set-alias cdB "cd \$env(Baidusync)"
