@@ -117,6 +117,7 @@ else
         fi
         sf=$infile
     else
+        mkdir -p $srcdir  #@ exp ensurence operation
         shfiles=(`ls $srcdir/Miniconda3*.sh -t 2>/dev/null || true`)
         if [[ ! -d $srcdir ]]; then
             echo -e "\033[31m Error! \033[0m $srcdir is not an existed directory!"
@@ -142,10 +143,32 @@ else
 fi
 
 #@ <post>
+#@ <.update-condarc>
+cat << EOF > $dstdir/condarc
+channels:
+  - defaults
+show_channel_urls: true
+default_channels:
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/r
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/msys2
+custom_channels:
+  conda-forge: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud
+  msys2: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud
+  bioconda: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud
+  menpo: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud
+  pytorch: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud
+  pytorch-lts: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud
+  simpleitk: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud
+
+EOF
+
+
 #@ <.manage-in-bash>
 if [[ $use_module -eq 0 ]]; then  #@ branch use bash to control conda init, just update $profile
     cat << EOF > .temp
 # >>>>>>>>>>>>>>>>>>>>>>>>>>> [conda]
+export CONDARC=$dstdir/condarc
 function iC(){
     if [[ -z \${CONDA_EXE+x} ]]; then
         source $dstdir/etc/profile.d/conda.sh
@@ -173,6 +196,7 @@ else  #@ branch use module, need to organize modulefile and update $profile
 #%Module1.0
 
 puts "source $reSoft/idep/miniconda3/etc/profile.d/conda.sh"
+setenv CONDARC $dstdir/condarc
 set-alias iC {conda activate}
 set-alias qC {conda deactivate}
 EOF

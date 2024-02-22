@@ -5,6 +5,11 @@ sudo apt install openssh-server
 sudo apt install build-essential
 sudo apt install gfortran-11
 
+
+
+# [network]
+sudo apt install net-tools
+
 # [lmod]
 sudo apt install tcl8.6-dev
 sudo apt install liblua5.2-dev

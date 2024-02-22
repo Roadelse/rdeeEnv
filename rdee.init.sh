@@ -28,7 +28,7 @@ if [[ -z $gitVer ]]; then
 	echo '\033[31m'"Error! Cannot find git command"'\033[0m'
 	exit 200
 elif [[ `echo $gitVer | grep -Po '(?<= )\d'` != 2 ]]; then
-	echo '\033[33m'"Warning! git version too old: $gitVer"'\033[0m'
+	echo -e '\033[33m'"Warning! git version too old: $gitVer"'\033[0m'
 fi
 #@ <..python/>
 if [[ -z `which python3 2>/dev/null` ]]; then
@@ -88,7 +88,7 @@ if [[ -n ${reHome_fromArg+x} ]]; then  #@ branch set reHome in arguments manuall
 elif [[ -z ${reHome} ]]; then #@ branch set default reHome
     reHome=${HOME}
 fi #@ branch omit branch which set reHome in environment variables
-
+echo -e "\033[32m reHome \033[0m = $reHome"
 
 echo reHome=$reHome
 
@@ -263,7 +263,7 @@ for p in "${projs[@]}"; do
 			fi
 		fi
 	else
-		echo "$p detected in $reGit, use the existed one"
+		echo -e "$p \033[33mdetected\033[0m in $reGit, use the existed one"
 	fi
 
 	# <...call-init> call init in this repo
@@ -274,7 +274,7 @@ for p in "${projs[@]}"; do
 
 	cd $reGit/$p/init
 	if [[ $echo_only == 0 ]]; then
-		$reGit/$p/init/init.Linux.sh -b $installDir/bin -s $installDir/setenvfiles/.components/load.${p}.sh -m $installDir/modulefiles/.components/${p}
+		bash $reGit/$p/init/init.Linux.sh -b $installDir/bin -s $installDir/setenvfiles/.components/load.${p}.sh -m $installDir/modulefiles/.components/${p}
 	fi
 done
 
@@ -314,7 +314,7 @@ module use $reSoft/modulefiles
 module load rdee
 
 EOF
-        python3 $reGit/rdeeToolkit/bin/io/txtop.ra-nlines.py $profile .temp
+        python3 $reGit/rdeeToolkit/bin/io/txtop.ra-nlines.py $profile .temp '#!/bin/bash\n\n'
         rm -f .temp
     elif [[ $sm == "setenv" ]]; then  #@ branch use shell script to init rdee
         cat << EOF > .temp
@@ -323,7 +323,7 @@ export PS1='\033[01;32m\\u@\\h\033[0m:\033[01;34m\\W\033[0m$ '
 source $installDir/setenvfiles/load.rdee.sh
 
 EOF
-        python3 $reGit/rdeeToolkit/bin/io/txtop.ra-nlines.py $profile .temp
+        python3 $reGit/rdeeToolkit/bin/io/txtop.ra-nlines.py $profile .temp '#!/bin/bash\n\n'
         rm -f .temp
     else
         echo "Unknown input: $sm"
