@@ -12,19 +12,21 @@ sudo apt-get update
 sudo apt-get install -y wget
 
 # Download the PowerShell package file
-if [[ ! -e powershell_7.4.1-1.deb_amd64.deb ]]; then
-    wget https://github.com/PowerShell/PowerShell/releases/download/v7.4.1/powershell_7.4.1-1.deb_amd64.deb
+fn=powershell_7.4.1-1.deb_amd64.deb
+if [[ ! -e $fn ]]; then
+    wget https://github.com/PowerShell/PowerShell/releases/download/v7.4.1/$fn
 fi
 
 ###################################
 # Install the PowerShell package
-sudo dpkg -i powershell_7.4.1-1.deb_amd64.deb
+sudo dpkg -i $fn
 
 # Resolve missing dependencies and finish the install (if necessary)
 sudo apt-get install -f
 
 # Delete the downloaded package file
-rm powershell_7.4.1-1.deb_amd64.deb
+rm $fn
+# rm powershell_7.4.1-1.deb_amd64.deb
 
 # Start PowerShell Preview
 # pwsh-lts

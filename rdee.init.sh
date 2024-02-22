@@ -148,6 +148,9 @@ if [[ $isWSL ]]; then
     ln -sf /mnt/c/Users/${winuser}/OneDrive $reOnedrive
     ln -sf /mnt/c/Users/${winuser}/Desktop $reDesktop
     ln -sf /mnt/c/Users/${winuser}/Downloads $reDownloads
+
+    mkdir -p $reHome/Software
+    ln -sf /mnt/d/recRoot/DataVault/INSTALL $reHome/Software/src
 fi
 
 #@ <.rdee-installation>
@@ -346,11 +349,11 @@ ln -sf $installDir/modulefiles/rdee $reSoft/modulefiles/rdee
 #@ <.modify-profile> init control & PS1 setting
 if [[ -n $profile ]]; then
     echo -e "profile detected, which way to init rdee? [${ANSI_YELLOW}setenv${ANSI_NC}|${ANSI_GREEN}module${ANSI_NC}] default:${ANSI_GREEN}module${ANSI_NC} "
-    read $sm
+    read sm
     if [[ -z $sm ]]; then
         sm=module
     fi
-
+    
     if [[ $sm == "module" ]]; then  #@ branch use module to init rdee
         cat << EOF > .temp
 # >>>>>>>>>>>>>>>>>>>>>>>>>>> [rdee] init
@@ -359,8 +362,9 @@ module use $reSoft/modulefiles
 module load rdee
 
 EOF
-        python3 $reGit/rdeeToolkit/bin/io/txtop.ra-nlines.py $profile .temp '#!/bin/bash\n\n'
+        python3 $myDir/tools/txtop.ra-nlines.py $profile .temp '#!/bin/bash'
         rm -f .temp
+
     elif [[ $sm == "setenv" ]]; then  #@ branch use shell script to init rdee
         cat << EOF > .temp
 # >>>>>>>>>>>>>>>>>>>>>>>>>>> [rdee] init
@@ -368,7 +372,7 @@ export PS1='\033[01;32m\\u@\\h\033[0m:\033[01;34m\\W\033[0m$ '
 source $installDir/setenvfiles/load.rdee.sh
 
 EOF
-        python3 $reGit/rdeeToolkit/bin/io/txtop.ra-nlines.py $profile .temp '#!/bin/bash\n\n'
+        python3 $myDir/tools/txtop.ra-nlines.py $profile .temp '#!/bin/bash'
         rm -f .temp
     else
         echo "Unknown input: $sm"

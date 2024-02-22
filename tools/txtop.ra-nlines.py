@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 # coding=utf-8
 
-
-# copied from Git:rdeeToolkit/bin/io/txtop.ra-nlines.py
-
 #@ <Introduction>
 #@ This script aims to create/append/replace the given multiple string lines into a base file.
 #@ It can be implement in many tricks, such as sed or awk, but this scripts provides a more simple and general way 
@@ -33,9 +30,9 @@ if sys.version_info < (3, 6):
 
 #@ .global-variables
 headerStock = {
-    ".py": "#!/usr/bin/env python3\n# coding=utf-8\n\n",
-    ".sh": "#!/bin/bash\n\n",
-    "tmod": "#%Module1.0\n\n" 
+    ".py": "#!/usr/bin/env python3\n# coding=utf-8",
+    ".sh": "#!/bin/bash",
+    "tmod": "#%Module1.0" 
 }
 
 #@ core
@@ -56,7 +53,7 @@ def ra_nlines(basefile: str, rafile: str, cheader: Optional[str] = None) -> None
             ext = os.path.splitext(basefile)[1]
             header = headerStock[ext]
         with open(basefile, "w") as f:
-            f.write(header)
+            f.write(header.replace(r"\n", "\n") + "\n\n")
             f.write(open(rafile, encoding="utf-8").read())
         return
 

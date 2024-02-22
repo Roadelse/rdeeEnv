@@ -127,13 +127,12 @@ fi
 dstname=`basename $dstdir`
 
 
-
-if [[ -e $dstdir/lmod ]]; then
+if [[ -e $dstdir/lmod/lmod ]]; then
     echo "lmod already installed"
 else
-    mkdir -p $HOME/Software/idep/lmod/src && cd $_
+    mkdir -p $dstdir/lmod/src && cd $_
 
-    zipfiles=(`ls *.tar.gz -t 2>/dev/null || true`)
+    zipfiles=(`ls $srcdir/Lmod*.tar.gz -t 2>/dev/null || true`)
     if [[ -z $zipfiles ]]; then
         wget https://github.com/TACC/Lmod/archive/refs/tags/8.7.34.tar.gz  #@ future may change an always-latest URL
         mv 8.7.34.tar.gz $srcdir/Lmod.8.7.34.tar.gz
@@ -142,7 +141,8 @@ else
         zf=${zipfiles[0]}
     fi
 
-    dn=`python3 -c "print(${zf}[:-7])"`  #@ dn -> directory name
+    zfn=`basename $zf`
+    dn=`python3 -c "print('${zfn}'[:-7])"`  #@ dn -> directory name
 
     if [[ ! -e $dn ]]; then 
         tar -zxvf $zf
@@ -150,7 +150,7 @@ else
 
     cd $dn
 
-    ./configure --prefix=$HOME/Software/idep
+    ./configure --prefix=$dstdir
     make install
 fi
 
@@ -163,12 +163,12 @@ if [[ -d $profile ]]; then
 else
     echo -e "\033[33m Updating \033[0m $profile"
     if [[ $echo_only == 0 ]]; then
-        echo << EOF > .temp
+        cat << EOF > .temp
 # >>>>>>>>>>>>>>>>>>>>>>>>>>> [lmod]
 source $dstdir/lmod/lmod/init/profile
 
 EOF
-        python3 $myDir/../../tools/txtop.ra-nlines.py .temp "#!/bin/bash\n\n"
+        python3 $myDir/../../tools/txtop.ra-nlines.py $profile .temp "#!/bin/bash\n\n"
         rm -f .temp
     fi
 fi
