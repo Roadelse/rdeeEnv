@@ -1,5 +1,6 @@
 #!/bin/bash
 
+wget https://github.com/helix-editor/helix/releases/download/23.10/helix-23.10-x86_64-linux.tar.xz
 
 #@ <prepare>
 #@ <.global-setting>
@@ -19,7 +20,6 @@ fi
 #@ <.argument>
 #@ <..default>
 srcdir=$curDir
-infile=
 profile=
 dstdir=
 force=0
@@ -27,7 +27,7 @@ show_help=0
 with_rdee=0
 echo_only=0
 #@ <..resolve>
-while getopts "rehfp:s:d:i:" arg; do
+while getopts "rehfp:s:d:" arg; do
     case $arg in
     r)
         with_rdee=1;;
@@ -43,8 +43,6 @@ while getopts "rehfp:s:d:i:" arg; do
         srcdir=$OPTARG;;
     d)
         dstdir=$OPTARG;;
-    i)
-        infile=$OPTARG;;
     ?)
         echo -e "\033[31m Error! \033[0m Unknown option: $arg"
         exit 200;;
@@ -121,52 +119,3 @@ fi
 
 #@ <.dependent>
 dstname=`basename $dstdir`
-
-
-#@ <core>
-if [[ -e $dstdir/lmod/lmod ]]; then
-    echo "lmod already installed"
-else
-    mkdir -p $dstdir/lmod/src && cd $_
-
-    zipfiles=(`ls $srcdir/Lmod*.tar.gz -t 2>/dev/null || true`)
-    if [[ -z $zipfiles ]]; then
-        wget https://github.com/TACC/Lmod/archive/refs/tags/8.7.34.tar.gz  #@ future may change an always-latest URL
-        mv 8.7.34.tar.gz $srcdir/Lmod.8.7.34.tar.gz
-        zf=$srcdir/Lmod.8.7.34.tar.gz
-    else
-        zf=${zipfiles[0]}
-    fi
-
-    zfn=`basename $zf`
-    dn=`python3 -c "print('${zfn}'[:-7])"`  #@ dn -> directory name
-
-    if [[ ! -e $dn ]]; then 
-        tar -zxvf $zf
-    fi
-
-    cd $dn
-
-    ./configure --prefix=$dstdir
-    make install
-fi
-
-
-#@ <post>
-if [[ -d $profile ]]; then
-    echo -e "\033[33m Linking \033[0m $dstdir/lmod/lmod/init/profile into $profile/lmod.sh"
-    if [[ $echo_only == 0 ]]; then
-        ln -sf $dstdir/lmod/lmod/init/profile $profile/lmod.sh
-    fi
-else
-    echo -e "\033[33m Updating \033[0m $profile"
-    if [[ $echo_only == 0 ]]; then
-        cat << EOF > .temp
-# >>>>>>>>>>>>>>>>>>>>>>>>>>> [lmod]
-source $dstdir/lmod/lmod/init/profile
-
-EOF
-        python3 $myDir/../../tools/txtop.ra-nlines.py $profile .temp "#!/bin/bash\n\n"
-        rm -f .temp
-    fi
-fi

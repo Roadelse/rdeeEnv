@@ -6,6 +6,7 @@ sudo apt install build-essential
 sudo apt install gfortran-11
 
 sudo apt install plocate
+sudo apt install cloc 
 
 # [network]
 sudo apt install net-tools
