@@ -295,7 +295,7 @@ EOF
 fi
 
 #@ <.git-projs>
-projs=(rdeeToolkit reSync)
+projs=(rdeeToolkit reSync dirdeck)
 
 
 #@ <..loop-projs>
@@ -305,9 +305,9 @@ for p in "${projs[@]}"; do
 		cd $reGit
 		if [[ $echo_only == 0 ]]; then
 			if [[ $git_clone_protocol == ssh ]]; then
-				git clone git@github.com:Roadelse/$p.git  #>- ignore fingerprint check since it should have been confirmed in cloning rdeeEnv itself
+				git clone --depth 1 git@github.com:Roadelse/$p.git  #>- ignore fingerprint check since it should have been confirmed in cloning rdeeEnv itself
 			else
-				git clone https://github.com/Roadelse/$p.git
+				git clone --depth 1 https://github.com/Roadelse/$p.git
 			fi
 		fi
 	else
