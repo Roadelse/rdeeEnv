@@ -20,4 +20,8 @@ sudo apt install lua-posix
 sudo apt install bc
 
 
+# [build]
+sudo apt install bats  # unittest framework
+
+
 sudo snap install glow
